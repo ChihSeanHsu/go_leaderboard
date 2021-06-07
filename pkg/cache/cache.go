@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"example.com/leaderboard/pkg/model"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"log"
 	"os"
@@ -39,4 +40,25 @@ func (cache *Cache) SetLeaderboard(ctx context.Context, board model.Leaderboard)
 		return err
 	}
 	return cache.Set(ctx, LeaderboardKey, value, 0).Err()
+}
+
+func (cache *Cache) GetLeaderboard(ctx context.Context) (model.Leaderboard, error) {
+	var leaderboard model.Leaderboard
+	value, err := cache.Get(ctx, LeaderboardKey).Result()
+
+	switch {
+	case err == redis.Nil || value == "":
+		fmt.Println("Leaderboard Not found")
+		err = ErrNotFound
+	case err != nil:
+		fmt.Printf("Get Leaderboard err: %s\n", err)
+	default:
+		err = json.Unmarshal([]byte(value), &leaderboard)
+		if err != nil {
+			fmt.Println(err)
+			err = ErrDataCorruption
+		}
+	}
+
+	return leaderboard, err
 }

@@ -32,7 +32,7 @@ var _ = Describe("Cache", func() {
 	AfterEach(func() {
 		rdb.Close()
 	})
-	Describe("test SetLeaderBoard", func() {
+	Describe("test SetLeaderboard", func() {
 		Context("successful", func() {
 			var leaderboard model.Leaderboard
 			BeforeEach(func() {
@@ -67,6 +67,54 @@ var _ = Describe("Cache", func() {
 
 				Expect(actualLeaderboard).NotTo(Equal(leaderboard))
 				Expect(actualLeaderboard).To(Equal(leaderboard2))
+			})
+		})
+	})
+	Describe("test GetLeaderboard", func() {
+		Context("successful", func() {
+			var actualLeaderboard model.Leaderboard
+			var expectedLeaderboard model.Leaderboard
+			BeforeEach(func() {
+				ctx := context.Background()
+				expectedLeaderboard = createLeaderboard()
+				rdb.SetLeaderboard(ctx, expectedLeaderboard)
+			})
+			AfterEach(func() {
+				ctx := context.Background()
+				rdb.Del(ctx, cache.LeaderboardKey)
+			})
+
+			It("Just get leaderboard", func() {
+				var err error
+				ctx := context.Background()
+				actualLeaderboard, err = rdb.GetLeaderboard(ctx)
+				Expect(err).To(BeNil())
+				Expect(actualLeaderboard).To(Equal(expectedLeaderboard))
+			})
+		})
+		Context("failed", func() {
+			var leaderboard model.Leaderboard
+			It("not found", func() {
+				var err error
+				ctx := context.Background()
+				leaderboard, err = rdb.GetLeaderboard(ctx)
+				Expect(err).To(Equal(cache.ErrNotFound))
+				Expect(leaderboard).To(Equal(model.Leaderboard{}))
+			})
+			It("empty value", func() {
+				var err error
+				ctx := context.Background()
+				leaderboard, err = rdb.GetLeaderboard(ctx)
+				Expect(err).To(Equal(cache.ErrNotFound))
+				Expect(leaderboard).To(Equal(model.Leaderboard{}))
+			})
+			It("invalid JSON", func() {
+				var err error
+				ctx := context.Background()
+				_ = rdb.Set(ctx, cache.LeaderboardKey, "test", 0)
+				leaderboard, err = rdb.GetLeaderboard(ctx)
+				Expect(err).To(Equal(cache.ErrDataCorruption))
+				Expect(leaderboard).To(Equal(model.Leaderboard{}))
 			})
 		})
 	})
