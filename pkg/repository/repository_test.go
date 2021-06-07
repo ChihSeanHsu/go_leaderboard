@@ -2,7 +2,6 @@ package repository_test
 
 import (
 	"context"
-	"example.com/leaderboard/pkg/model"
 	"example.com/leaderboard/pkg/repository"
 	"fmt"
 	"github.com/google/uuid"
@@ -13,17 +12,17 @@ import (
 
 func setupDB() *repository.Repository {
 	db := repository.Init(10, 1)
-	db.AutoMigrate(&model.Score{})
+	db.AutoMigrate(&repository.ScoreORM{})
 	return db
 }
 
 func tearDownDB(db *repository.Repository) {
-	db.Migrator().DropTable(&model.Score{})
+	db.Migrator().DropTable(&repository.ScoreORM{})
 }
 
 func truncateTable(db *repository.Repository) {
 	var modelArray []interface{}
-	modelArray = append(modelArray, &model.Score{})
+	modelArray = append(modelArray, &repository.ScoreORM{})
 	sql := "TRUNCATE TABLE  %s;"
 	stmt := &gorm.Statement{DB: db.DB}
 	for _, m := range modelArray {
@@ -32,7 +31,7 @@ func truncateTable(db *repository.Repository) {
 	}
 }
 
-func insertScore(db *repository.Repository, score *model.Score) model.Score {
+func insertScore(db *repository.Repository, score *repository.ScoreORM) repository.ScoreORM {
 	db.Create(score)
 	return *score
 }
@@ -47,12 +46,12 @@ var _ = Describe("Model test", func() {
 	})
 	Describe("test ListTopScores", func() {
 		Context("successful", func() {
-			var expectedScores []model.Score
+			var expectedScores []repository.ScoreORM
 			BeforeEach(func() {
-				expectedScores = []model.Score{}
+				expectedScores = []repository.ScoreORM{}
 				for i := 20; i > 0; i-- {
 					clientId := uuid.NewString()
-					score := &model.Score{
+					score := &repository.ScoreORM{
 						Score:    int64(i),
 						ClientID: clientId,
 					}
@@ -67,7 +66,6 @@ var _ = Describe("Model test", func() {
 				scores, err := db.ListTopScores(ctx)
 				Expect(len(scores)).To(Equal(10))
 				for idx, score := range scores {
-					Expect(score.ID).To(Equal(expectedScores[idx].ID))
 					Expect(score.ClientID).To(Equal(expectedScores[idx].ClientID))
 					Expect(score.Score).To(Equal(expectedScores[idx].Score))
 				}
@@ -79,7 +77,6 @@ var _ = Describe("Model test", func() {
 					scores, err := db.ListTopScores(ctx, limit)
 					Expect(len(scores)).To(Equal(limit))
 					for idx, score := range scores {
-						Expect(score.ID).To(Equal(expectedScores[idx].ID))
 						Expect(score.ClientID).To(Equal(expectedScores[idx].ClientID))
 						Expect(score.Score).To(Equal(expectedScores[idx].Score))
 					}
@@ -91,7 +88,7 @@ var _ = Describe("Model test", func() {
 			It("not found", func() {
 				ctx := context.Background()
 				scores, err := db.ListTopScores(ctx, 10)
-				Expect(scores).To(Equal([]model.Score{}))
+				Expect(scores).To(Equal([]repository.ScoreORM{}))
 				Expect(err).To(Equal(repository.ErrNotFound))
 			})
 		})
@@ -102,39 +99,26 @@ var _ = Describe("Model test", func() {
 				truncateTable(db)
 			})
 			It("default", func() {
-				var actualScore model.Score
+				var actualScore repository.ScoreORM
 				ctx := context.Background()
 				clientId := uuid.NewString()
 				score := int64(10)
-				expectedScore := &model.Score{
-					Score:    score,
-					ClientID: clientId,
-				}
-				err := db.CreateScore(ctx, expectedScore)
+				err := db.CreateScore(ctx, clientId, score)
 				db.Where("client_id=? AND score=?", clientId, score).First(&actualScore)
 				Expect(err).To(BeNil())
-				Expect(actualScore.ID).To(Equal(expectedScore.ID))
-				Expect(actualScore.ClientID).To(Equal(expectedScore.ClientID))
-				Expect(actualScore.Score).To(Equal(expectedScore.Score))
+				Expect(actualScore.ClientID).To(Equal(clientId))
+				Expect(actualScore.Score).To(Equal(score))
 			})
 			It("duplicated ClientID", func() {
-				var actualScore model.Score
+				var actualScore repository.ScoreORM
 				ctx := context.Background()
 				clientId := uuid.NewString()
 				score := int64(10)
-				oriScore := &model.Score{
-					Score:    score,
-					ClientID: clientId,
-				}
-				err := db.CreateScore(ctx, oriScore)
+				err := db.CreateScore(ctx, clientId, score)
 				Expect(err).To(BeNil())
 
 				newScore := score + 10
-				expectedScore := &model.Score{
-					Score:    newScore,
-					ClientID: clientId,
-				}
-				err = db.CreateScore(ctx, expectedScore)
+				err = db.CreateScore(ctx, clientId, newScore)
 				Expect(err).To(BeNil())
 
 				err = db.Where("client_id=? AND score=?", clientId, score).First(&actualScore).Error
@@ -142,24 +126,9 @@ var _ = Describe("Model test", func() {
 
 				db.Where("client_id=? AND score=?", clientId, newScore).First(&actualScore)
 				// check update
-				Expect(actualScore.ID).To(Equal(expectedScore.ID))
-				Expect(actualScore.ClientID).To(Equal(expectedScore.ClientID))
-				Expect(actualScore.Score).To(Equal(expectedScore.Score))
-
-				// check only update score and updated_at
-				Expect(actualScore.ID).To(Equal(oriScore.ID))
-				Expect(actualScore.ClientID).To(Equal(oriScore.ClientID))
-				Expect(actualScore.Score).NotTo(Equal(oriScore.Score))
-				Expect(actualScore.UpdatedAt).NotTo(Equal(oriScore.UpdatedAt))
+				Expect(actualScore.ClientID).To(Equal(clientId))
+				Expect(actualScore.Score).To(Equal(newScore))
 			})
 		})
-		//Context("failed", func() {
-		//	It("not found", func() {
-		//		ctx := context.Background()
-		//		scores, err := db.ListTopScores(ctx, 10)
-		//		Expect(scores).To(Equal([]model.Score{}))
-		//		Expect(err).To(Equal(repository.ErrNotFound))
-		//	})
-		//})
 	})
 })

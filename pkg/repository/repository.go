@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"example.com/leaderboard/pkg/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -36,7 +35,11 @@ func Init(pool int, retry int) *Repository {
 	return &Repository{db}
 }
 
-func (repo *Repository) CreateScore(ctx context.Context, score *model.Score) error {
+func (repo *Repository) CreateScore(ctx context.Context, clientID string, scorePoint int64) error {
+	score := &ScoreORM{
+		ClientID: clientID,
+		Score: scorePoint,
+	}
 	sess := repo.Session(&gorm.Session{})
 	err := sess.Clauses(
 		clause.OnConflict{
@@ -47,15 +50,15 @@ func (repo *Repository) CreateScore(ctx context.Context, score *model.Score) err
 	return err
 }
 
-func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]model.Score, error) {
-	var scores []model.Score
+func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]ScoreORM, error) {
+	var scores []ScoreORM
 	var l int
 	if len(limit) == 0 {
 		l = 10
 	} else {
 		l = limit[0]
 	}
-	err := repo.Order("score desc").Limit(l).Find(&scores).Error
+	err := repo.Select("client_id", "score").Order("score desc").Limit(l).Find(&scores).Error
 	if len(scores) == 0 {
 		return scores, ErrNotFound
 	}
