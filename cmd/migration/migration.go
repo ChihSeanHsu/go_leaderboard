@@ -7,5 +7,5 @@ import (
 
 func main() {
 	db := repository.Init(1, 1)
-	db.AutoMigrate(&model.ScoreModel{})
+	db.AutoMigrate(&model.Score{})
 }

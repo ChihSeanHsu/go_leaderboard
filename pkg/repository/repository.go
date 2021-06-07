@@ -35,8 +35,8 @@ func Init(pool int, retry int) *Repository {
 	return &Repository{db}
 }
 
-func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]model.ScoreModel, error) {
-	var scores []model.ScoreModel
+func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]model.Score, error) {
+	var scores []model.Score
 	var l int
 	if len(limit) == 0 {
 		l = 10

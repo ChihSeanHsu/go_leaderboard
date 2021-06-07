@@ -9,7 +9,6 @@ var (
 	DB *repository.Repository
 )
 
-
 func main() {
 	DB = repository.Init(20, 1)
 	r := gin.Default()

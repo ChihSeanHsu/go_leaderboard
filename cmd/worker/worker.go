@@ -6,9 +6,8 @@ import (
 )
 
 var (
-	DB   *repository.Repository
+	DB *repository.Repository
 )
-
 
 func main() {
 	var wg sync.WaitGroup

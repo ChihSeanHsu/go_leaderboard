@@ -4,13 +4,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type ScoreModel struct {
+type Score struct {
 	gorm.Model
-	ClientID string `gorm:"uniqueIndex:idx_name;type:varchar(256)"`
-	Score    uint64 `gorm:"index"`
+	ClientID string `gorm:"uniqueIndex:uni_idx__client_id;type:varchar(256)"`
+	Score    int64  `gorm:"index:idx__score,sort:desc"`
 }
 
-//type ScoreModel struct {
+//type Score struct {
 //
 //	Score
 //}

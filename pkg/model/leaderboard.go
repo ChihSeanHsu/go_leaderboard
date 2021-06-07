@@ -1,5 +1,5 @@
 package model
 
 type LeaderBoard struct {
-	Scores []ScoreModel
+	Scores []Score
 }
