@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.10.5
+	github.com/robfig/cron/v3 v3.0.1
 	gorm.io/driver/postgres v1.1.0
 	gorm.io/gorm v1.21.10
 )
