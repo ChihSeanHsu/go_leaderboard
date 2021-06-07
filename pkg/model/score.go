@@ -1,6 +1,6 @@
 package model
 
 type Score struct {
-	ClientID string
-	Score    int64
+	ClientID string `json:"clientId"`
+	Score    int64  `json:"score"`
 }

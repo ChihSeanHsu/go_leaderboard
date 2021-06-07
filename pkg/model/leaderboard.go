@@ -1,5 +1,5 @@
 package model
 
-type LeaderBoard struct {
-	Scores []Score
+type Leaderboard struct {
+	TopPlayers []Score `json:"topPlayers"`
 }
