@@ -3,26 +3,12 @@ package cache_test
 import (
 	"context"
 	"encoding/json"
+	"example.com/leaderboard/internal/testUtil"
 	"example.com/leaderboard/pkg/cache"
 	"example.com/leaderboard/pkg/model"
-	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func createLeaderboard() model.Leaderboard {
-	var scores []model.Score
-	for i := 10; i > 0; i-- {
-		clientID := uuid.NewString()
-		scores = append(scores, model.Score{
-			ClientID: clientID,
-			Score:    int64(i),
-		})
-	}
-	return model.Leaderboard{
-		TopPlayers: scores,
-	}
-}
 
 var _ = Describe("Cache", func() {
 	var rdb *cache.Cache
@@ -36,7 +22,7 @@ var _ = Describe("Cache", func() {
 		Context("successful", func() {
 			var leaderboard model.Leaderboard
 			BeforeEach(func() {
-				leaderboard = createLeaderboard()
+				leaderboard = testUtil.CreateLeaderboard()
 			})
 			AfterEach(func() {
 				ctx := context.Background()
@@ -58,7 +44,7 @@ var _ = Describe("Cache", func() {
 				err := rdb.SetLeaderboard(ctx, leaderboard)
 				Expect(err).To(BeNil())
 
-				leaderboard2 := createLeaderboard()
+				leaderboard2 := testUtil.CreateLeaderboard()
 				err = rdb.SetLeaderboard(ctx, leaderboard2)
 				Expect(err).To(BeNil())
 
@@ -76,7 +62,7 @@ var _ = Describe("Cache", func() {
 			var expectedLeaderboard model.Leaderboard
 			BeforeEach(func() {
 				ctx := context.Background()
-				expectedLeaderboard = createLeaderboard()
+				expectedLeaderboard = testUtil.CreateLeaderboard()
 				rdb.SetLeaderboard(ctx, expectedLeaderboard)
 			})
 			AfterEach(func() {

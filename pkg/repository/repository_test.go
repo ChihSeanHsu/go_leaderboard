@@ -2,34 +2,13 @@ package repository_test
 
 import (
 	"context"
+	"example.com/leaderboard/internal/testUtil"
 	"example.com/leaderboard/pkg/repository"
-	"fmt"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gorm.io/gorm"
 )
 
-func setupDB() *repository.Repository {
-	db := repository.Init(10, 1)
-	db.AutoMigrate(&repository.ScoreORM{})
-	return db
-}
-
-func tearDownDB(db *repository.Repository) {
-	db.Migrator().DropTable(&repository.ScoreORM{})
-}
-
-func truncateTable(db *repository.Repository) {
-	var modelArray []interface{}
-	modelArray = append(modelArray, &repository.ScoreORM{})
-	sql := "TRUNCATE TABLE  %s;"
-	stmt := &gorm.Statement{DB: db.DB}
-	for _, m := range modelArray {
-		stmt.Parse(m)
-		db.Exec(fmt.Sprintf(sql, stmt.Table))
-	}
-}
 
 func insertScore(db *repository.Repository, score *repository.ScoreORM) repository.ScoreORM {
 	db.Create(score)
@@ -39,10 +18,10 @@ func insertScore(db *repository.Repository, score *repository.ScoreORM) reposito
 var _ = Describe("Model test", func() {
 	var db *repository.Repository
 	BeforeEach(func() {
-		db = setupDB()
+		db = testUtil.SetupDB()
 	})
 	AfterEach(func() {
-		tearDownDB(db)
+		testUtil.TearDownDB(db)
 	})
 	Describe("test ListTopScores", func() {
 		Context("successful", func() {
@@ -59,7 +38,7 @@ var _ = Describe("Model test", func() {
 				}
 			})
 			AfterEach(func() {
-				truncateTable(db)
+				testUtil.TruncateTable(db)
 			})
 			It("Found without limit value (default is 10)", func() {
 				ctx := context.Background()
@@ -96,7 +75,7 @@ var _ = Describe("Model test", func() {
 	Describe("test CreateScore", func() {
 		Context("successful", func() {
 			AfterEach(func() {
-				truncateTable(db)
+				testUtil.TruncateTable(db)
 			})
 			It("default", func() {
 				var actualScore repository.ScoreORM
