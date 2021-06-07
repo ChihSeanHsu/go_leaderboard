@@ -5,6 +5,7 @@ import (
 	"example.com/leaderboard/pkg/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"os"
 	"time"
@@ -33,6 +34,17 @@ func Init(pool int, retry int) *Repository {
 	sqlDB.SetConnMaxIdleTime(time.Hour)
 
 	return &Repository{db}
+}
+
+func (repo *Repository) CreateScore(ctx context.Context, score *model.Score) error {
+	sess := repo.Session(&gorm.Session{})
+	err := sess.Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "client_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"updated_at", "score"}),
+		},
+	).Create(score).Error
+	return err
 }
 
 func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]model.Score, error) {
