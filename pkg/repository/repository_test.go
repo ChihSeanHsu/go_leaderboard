@@ -46,7 +46,7 @@ var _ = Describe("Model test", func() {
 		Context("failed", func() {
 			It("not found", func() {
 				ctx := context.Background()
-				scores, err := db.ListTop10Scores(ctx)
+				scores, err := db.ListTopScores(ctx, 10)
 				Expect(scores).To(Equal([]model.ScoreModel{}))
 				Expect(err).To(Equal(repository.ErrNotFound))
 			})

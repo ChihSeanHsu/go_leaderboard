@@ -35,8 +35,17 @@ func Init(pool int, retry int) *Repository {
 	return &Repository{db}
 }
 
-func (repo *Repository) ListTop10Scores(ctx context.Context) ([]model.Score, error) {
-	var scores []model.Score
-
-	return scores, nil
+func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]model.ScoreModel, error) {
+	var scores []model.ScoreModel
+	var l int
+	if len(limit) == 0 {
+		l = 10
+	} else {
+		l = limit[0]
+	}
+	err := repo.Order("score desc").Limit(l).Find(&scores).Error
+	if len(scores) == 0 {
+		return scores, ErrNotFound
+	}
+	return scores, err
 }
