@@ -94,6 +94,10 @@ var _ = Describe("Cache", func() {
 		})
 		Context("failed", func() {
 			var leaderboard model.Leaderboard
+			AfterEach(func() {
+				ctx := context.Background()
+				rdb.Del(ctx, cache.LeaderboardKey)
+			})
 			It("not found", func() {
 				var err error
 				ctx := context.Background()
