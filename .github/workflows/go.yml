@@ -17,8 +17,15 @@ jobs:
       with:
         go-version: 1.15
 
+    - name: Start containers
+        run: docker-compose -f "./deployment/docker-compose.yml" up -d --build
+
+    - name: Wait for db ready
+      uses: jakejarvis/wait-action@master
+        with:
+          time: '3m'
+
+    - name: Run ut
+
     - name: Build
       run: go build -v ./...
-
-    - name: Test
-      run: go test -v ./...
