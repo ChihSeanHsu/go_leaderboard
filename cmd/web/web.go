@@ -21,8 +21,10 @@ type ScoreRequest struct {
 }
 
 func GetLeaderboard(c *gin.Context) {
-	var status int
-	var result interface{}
+	var (
+		status int
+		result interface{}
+	)
 	ctx := context.Background()
 	leaderboard, err := Cache.GetLeaderboard(ctx)
 	if err == cache.ErrNotFound {
@@ -42,11 +44,13 @@ func GetLeaderboard(c *gin.Context) {
 }
 
 func PostScore(c *gin.Context) {
-	var status int
-	var result interface{}
-	var scoreJSON ScoreRequest
-	var err error
-	var body []byte
+	var (
+		status    int
+		result    interface{}
+		scoreJSON ScoreRequest
+		err       error
+		body      []byte
+	)
 	clientID := c.Request.Header.Get("clientId")
 	if c.Request.Body != nil {
 		body, err = ioutil.ReadAll(c.Request.Body)
