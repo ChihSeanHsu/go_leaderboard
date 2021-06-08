@@ -81,6 +81,18 @@ var _ = Describe("Web", func() {
 				expected, _ := json.Marshal(model.Leaderboard{})
 				Expect(r.Code).To(Equal(http.StatusOK))
 				Expect(r.Body.Bytes()).To(Equal(expected))
+
+				scores := testUtil.CreateScores(5)
+				expectedLeaderboard := testUtil.CreateLeaderboard(scores)
+				expectedJSON, _ := json.Marshal(expectedLeaderboard)
+				ctx := context.Background()
+				for _, score := range expectedLeaderboard.TopPlayers {
+					db.CreateScore(ctx, score.ClientID, score.Score)
+				}
+				r = request(router, method, uri, nil)
+				Expect(r.Code).To(Equal(http.StatusOK))
+				Expect(r.Body.Bytes()).To(Equal(expectedJSON))
+
 			})
 			It("no cache", func() {
 				scores := testUtil.CreateScores(10)

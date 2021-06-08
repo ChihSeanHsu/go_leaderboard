@@ -3,35 +3,51 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"example.com/leaderboard/internal/logging"
 	"example.com/leaderboard/pkg/cache"
 	"example.com/leaderboard/pkg/repository"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
 var (
-	DB    *repository.Repository
-	Cache *cache.Cache
+	DB     *repository.Repository
+	Cache  *cache.Cache
+	logger = logging.ZapL
 )
 
 type ScoreRequest struct {
 	Score float64
 }
 
+func traceContext(c *gin.Context) context.Context {
+	traceID := c.Request.Header.Get("traceId")
+	if traceID == "" {
+		traceID = uuid.New().String()
+		c.Request.Header.Add("X-TRACE-ID", traceID)
+	}
+	return context.WithValue(context.Background(), "TraceID", traceID)
+}
+
 func GetLeaderboard(c *gin.Context) {
 	var (
 		status int
 		result interface{}
+		topTen []repository.ScoreORM
 	)
-	ctx := context.Background()
+	ctx := traceContext(c)
+
 	leaderboard, err := Cache.GetLeaderboard(ctx)
-	if err == cache.ErrNotFound {
-		topTen, _ := DB.ListTopScores(ctx)
-		leaderboard, err = Cache.SetLeaderboard(ctx, topTen)
+	if err == cache.ErrNotFound || (err == nil && leaderboard.TopPlayers == nil) {
+		topTen, err = DB.ListTopScores(ctx)
+		if err == nil || err == repository.ErrNotFound {
+			leaderboard, err = Cache.SetLeaderboard(ctx, topTen)
+		}
 	}
 	if err != nil {
+		logger(ctx).Error(err)
 		status = http.StatusInternalServerError
 		result = gin.H{
 			"status": "Server error",
@@ -51,6 +67,8 @@ func PostScore(c *gin.Context) {
 		err       error
 		body      []byte
 	)
+	ctx := traceContext(c)
+
 	clientID := c.Request.Header.Get("clientId")
 	if c.Request.Body != nil {
 		body, err = ioutil.ReadAll(c.Request.Body)
@@ -58,21 +76,21 @@ func PostScore(c *gin.Context) {
 	}
 	switch {
 	case clientID == "":
+		logger(ctx).Warn(err)
 		status = http.StatusForbidden
 		result = gin.H{
 			"status": "No client ID",
 		}
 	case err != nil || scoreJSON == ScoreRequest{}:
-		log.Println(err)
+		logger(ctx).Warn(err)
 		status = http.StatusForbidden
 		result = gin.H{
 			"status": "Invalid Request Body",
 		}
 	default:
-		ctx := context.Background()
 		err = DB.CreateScore(ctx, clientID, scoreJSON.Score)
 		if err != nil {
-			log.Println(err)
+			logger(ctx).Error(err)
 			status = http.StatusInternalServerError
 			result = gin.H{
 				"status": "Store Score error",
@@ -88,6 +106,7 @@ func PostScore(c *gin.Context) {
 }
 
 func SetupRouter() *gin.Engine {
+	logging.InitLogging()
 	DB = repository.Init(20, 1)
 	Cache = cache.Init(20)
 	r := gin.Default()

@@ -3,13 +3,16 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"example.com/leaderboard/internal/logging"
 	"example.com/leaderboard/pkg/model"
 	"example.com/leaderboard/pkg/repository"
-	"fmt"
 	"github.com/go-redis/redis/v8"
-	"log"
 	"os"
 	"strconv"
+)
+
+var (
+	logger = logging.ZapL
 )
 
 type Cache struct {
@@ -22,7 +25,7 @@ func Init(pool int) *Cache {
 	passwd := os.Getenv("REDIS_PASSWD")
 	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
-		log.Fatal("Redis db only allow digit")
+		logger().Fatal("Redis db only allow digit")
 	}
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     host,
@@ -48,7 +51,7 @@ func (cache *Cache) SetLeaderboard(ctx context.Context, scoreObjs []repository.S
 	}
 	value, err := json.Marshal(leaderboard)
 	if err != nil {
-		log.Println(err)
+		logger(ctx).Error(err)
 		return leaderboard, err
 	}
 	return leaderboard, cache.Set(ctx, LeaderboardKey, value, 0).Err()
@@ -60,14 +63,14 @@ func (cache *Cache) GetLeaderboard(ctx context.Context) (model.Leaderboard, erro
 
 	switch {
 	case err == redis.Nil || value == "":
-		fmt.Println("Leaderboard Not found")
+		logger(ctx).Warn("Leaderboard Not found")
 		err = ErrNotFound
 	case err != nil:
-		fmt.Printf("Get Leaderboard err: %s\n", err)
+		logger(ctx).Error("Get Leaderboard err: %s\n", err)
 	default:
 		err = json.Unmarshal([]byte(value), &leaderboard)
 		if err != nil {
-			fmt.Println(err)
+			logger(ctx).Error(err)
 			err = ErrDataCorruption
 		}
 	}

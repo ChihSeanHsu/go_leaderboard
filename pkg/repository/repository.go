@@ -2,12 +2,16 @@ package repository
 
 import (
 	"context"
+	"example.com/leaderboard/internal/logging"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"log"
 	"os"
 	"time"
+)
+
+var (
+	logger = logging.ZapL
 )
 
 type Repository struct {
@@ -18,15 +22,15 @@ func Init(pool int, retry int) *Repository {
 	dsn := os.Getenv("DB_CONN_STR")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil && retry <= 3 {
-		log.Println(err)
+		logger().Warn(err)
 		// waiting for return
 		waitSec := 10 * retry
 		retry++
-		log.Println("wait for reconnect...")
+		logger().Info("wait for reconnect...")
 		time.Sleep(time.Duration(waitSec) * time.Second)
 		return Init(pool, retry)
 	} else if err != nil {
-		log.Fatal(err)
+		logger().Fatal(err)
 	}
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxIdleConns(pool)
@@ -59,7 +63,7 @@ func (repo *Repository) ListTopScores(ctx context.Context, limit ...int) ([]Scor
 		l = limit[0]
 	}
 	err := repo.Select("client_id", "score").Order("score desc").Limit(l).Find(&scores).Error
-	if len(scores) == 0 {
+	if len(scores) == 0 && err == nil {
 		return scores, ErrNotFound
 	}
 	return scores, err
