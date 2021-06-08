@@ -14,7 +14,7 @@ func CreateLeaderboard() model.Leaderboard {
 		clientID := uuid.NewString()
 		scores = append(scores, model.Score{
 			ClientID: clientID,
-			Score:    int64(i),
+			Score:    float64(i),
 		})
 	}
 	return model.Leaderboard{

@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 func insertScore(db *repository.Repository, score *repository.ScoreORM) repository.ScoreORM {
 	db.Create(score)
 	return *score
@@ -31,7 +30,7 @@ var _ = Describe("Model test", func() {
 				for i := 20; i > 0; i-- {
 					clientId := uuid.NewString()
 					score := &repository.ScoreORM{
-						Score:    int64(i),
+						Score:    float64(i),
 						ClientID: clientId,
 					}
 					expectedScores = append(expectedScores, insertScore(db, score))
@@ -81,7 +80,7 @@ var _ = Describe("Model test", func() {
 				var actualScore repository.ScoreORM
 				ctx := context.Background()
 				clientId := uuid.NewString()
-				score := int64(10)
+				score := float64(10)
 				err := db.CreateScore(ctx, clientId, score)
 				db.Where("client_id=? AND score=?", clientId, score).First(&actualScore)
 				Expect(err).To(BeNil())
@@ -92,7 +91,7 @@ var _ = Describe("Model test", func() {
 				var actualScore repository.ScoreORM
 				ctx := context.Background()
 				clientId := uuid.NewString()
-				score := int64(10)
+				score := float64(10)
 				err := db.CreateScore(ctx, clientId, score)
 				Expect(err).To(BeNil())
 

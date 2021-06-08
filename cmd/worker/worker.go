@@ -51,7 +51,6 @@ func main() {
 	c := cron.New()
 	c.AddJob("@every 10m", ResetLeaderboard{DB, RDB})
 	wg.Add(1)
-
 	c.Start()
 	wg.Wait()
 }

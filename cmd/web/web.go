@@ -17,7 +17,7 @@ var (
 )
 
 type ScoreRequest struct {
-	Score int64
+	Score float64
 }
 
 func GetLeaderboard(c *gin.Context) {

@@ -35,10 +35,10 @@ func Init(pool int, retry int) *Repository {
 	return &Repository{db}
 }
 
-func (repo *Repository) CreateScore(ctx context.Context, clientID string, scorePoint int64) error {
+func (repo *Repository) CreateScore(ctx context.Context, clientID string, scorePoint float64) error {
 	score := &ScoreORM{
 		ClientID: clientID,
-		Score: scorePoint,
+		Score:    scorePoint,
 	}
 	sess := repo.Session(&gorm.Session{})
 	err := sess.Clauses(
