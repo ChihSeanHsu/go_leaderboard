@@ -49,7 +49,9 @@ func main() {
 	RDB = cache.Init(10)
 	log.Println("worker start")
 	c := cron.New()
-	c.AddJob("@every 5s", ResetLeaderboard{DB, RDB})
+	c.AddJob("@every 10m", ResetLeaderboard{DB, RDB})
 	wg.Add(1)
+
+	c.Start()
 	wg.Wait()
 }

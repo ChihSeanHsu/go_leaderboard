@@ -44,27 +44,6 @@ var _ = Describe("Worker", func() {
 				Expect(leaderboard).To(Equal(expectedLeaderboard))
 			})
 		})
-		Context("successful", func() {
-			var expectedLeaderboard model.Leaderboard
-			BeforeEach(func() {
-				expectedLeaderboard = testUtil.CreateLeaderboard()
-				ctx := context.Background()
-				for _, score := range expectedLeaderboard.TopPlayers {
-					db.CreateScore(ctx, score.ClientID, score.Score)
-				}
-			})
-			AfterEach(func() {
-				ctx := context.Background()
-				rdb.Del(ctx, cache.LeaderboardKey)
-			})
-			It("Just reset leaderboard", func() {
-				job := main.ResetLeaderboard{DB: db, RDB: rdb}
-				job.Run()
-				ctx := context.Background()
-				leaderboard, _ := rdb.GetLeaderboard(ctx)
-				Expect(leaderboard).To(Equal(expectedLeaderboard))
-			})
-		})
 		Context("failed", func() {
 			AfterEach(func() {
 				ctx := context.Background()

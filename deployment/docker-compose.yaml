@@ -11,10 +11,30 @@ services:
       - 8080:8080
     depends_on:
       - db
+      - redis
     command:
       - /app/web
     environment:
       DB_CONN_STR: "host=db user=postgres password=example dbname=db port=5432 sslmode=disable TimeZone=Asia/Taipei"
+      REDIS_HOST: redis:6379
+      REDIS_DB: 1
+
+  worker:
+    restart: always
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    networks:
+      - example
+    depends_on:
+      - db
+      - redis
+    command:
+      - /app/worker
+    environment:
+      DB_CONN_STR: "host=db user=postgres password=example dbname=db port=5432 sslmode=disable TimeZone=Asia/Taipei"
+      REDIS_HOST: redis:6379
+      REDIS_DB: 1
 
   db:
     image: postgres:13
@@ -24,6 +44,11 @@ services:
       POSTGRES_DB: db
     volumes:
       - ./db:/var/lib/postgresql/data
+    networks:
+      - example
+
+  redis:
+    image: redis:6
     networks:
       - example
 
