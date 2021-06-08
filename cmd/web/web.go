@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"example.com/leaderboard/pkg/cache"
 	"example.com/leaderboard/pkg/repository"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -29,12 +29,12 @@ func GetLeaderboard(c *gin.Context) {
 	case err == cache.ErrNotFound:
 		status = http.StatusNotFound
 		result = gin.H{
-			"err": err,
+			"status": "leaderboard not ready",
 		}
 	case err != nil:
 		status = http.StatusInternalServerError
 		result = gin.H{
-			"err": err,
+			"status": "Server error",
 		}
 	default:
 		status = http.StatusOK
@@ -47,17 +47,21 @@ func PostScore(c *gin.Context) {
 	var status int
 	var result interface{}
 	var scoreJSON ScoreRequest
+	var err error
+	var body []byte
 	clientID := c.Request.Header.Get("clientId")
-	body, err := ioutil.ReadAll(c.Request.Body)
-	err = json.Unmarshal(body, &scoreJSON)
+	if c.Request.Body != nil {
+		body, err = ioutil.ReadAll(c.Request.Body)
+		err = json.Unmarshal(body, &scoreJSON)
+	}
 	switch {
 	case clientID == "":
 		status = http.StatusForbidden
 		result = gin.H{
 			"status": "No client ID",
 		}
-	case err != nil:
-		fmt.Println(err)
+	case err != nil || scoreJSON == ScoreRequest{}:
+		log.Println(err)
 		status = http.StatusForbidden
 		result = gin.H{
 			"status": "Invalid Request Body",
@@ -66,7 +70,7 @@ func PostScore(c *gin.Context) {
 		ctx := context.Background()
 		err = DB.CreateScore(ctx, clientID, scoreJSON.Score)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			status = http.StatusInternalServerError
 			result = gin.H{
 				"status": "Store Score error",
@@ -81,13 +85,17 @@ func PostScore(c *gin.Context) {
 	c.JSON(status, result)
 }
 
-func main() {
+func SetupRouter() *gin.Engine {
 	DB = repository.Init(20, 1)
 	Cache = cache.Init(20)
-	defer Cache.Close()
 	r := gin.Default()
 	r.GET("/api/v1/leaderboard", GetLeaderboard)
 	r.POST("/api/v1/score", PostScore)
+	return r
+}
 
+func main() {
+	r := SetupRouter()
+	defer Cache.Close()
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
