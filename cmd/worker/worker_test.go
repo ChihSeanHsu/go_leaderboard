@@ -38,7 +38,7 @@ var _ = Describe("Worker", func() {
 				rdb.Del(ctx, cache.LeaderboardKey)
 			})
 			It("Just reset leaderboard", func() {
-				job := main.ResetLeaderboard{DB: db, RDB: rdb}
+				job := main.ResetLeaderboard{DB: db, Cache: rdb}
 				job.Run()
 				ctx := context.Background()
 				leaderboard, _ := rdb.GetLeaderboard(ctx)
@@ -51,7 +51,7 @@ var _ = Describe("Worker", func() {
 				rdb.Del(ctx, cache.LeaderboardKey)
 			})
 			It("", func() {
-				job := main.ResetLeaderboard{DB: db, RDB: rdb}
+				job := main.ResetLeaderboard{DB: db, Cache: rdb}
 				job.Run()
 				ctx := context.Background()
 				leaderboard, err := rdb.GetLeaderboard(ctx)
