@@ -26,7 +26,8 @@ var _ = Describe("Worker", func() {
 		Context("successful", func() {
 			var expectedLeaderboard model.Leaderboard
 			BeforeEach(func() {
-				expectedLeaderboard = testUtil.CreateLeaderboard()
+				scores := testUtil.CreateScores(10)
+				expectedLeaderboard = testUtil.CreateLeaderboard(scores)
 				ctx := context.Background()
 				for _, score := range expectedLeaderboard.TopPlayers {
 					db.CreateScore(ctx, score.ClientID, score.Score)
@@ -54,7 +55,7 @@ var _ = Describe("Worker", func() {
 				job.Run()
 				ctx := context.Background()
 				leaderboard, err := rdb.GetLeaderboard(ctx)
-				Expect(err).To(Equal(cache.ErrNotFound))
+				Expect(err).To(BeNil())
 				Expect(leaderboard).To(Equal(model.Leaderboard{}))
 			})
 		})

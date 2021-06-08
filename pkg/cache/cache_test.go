@@ -6,6 +6,7 @@ import (
 	"example.com/leaderboard/internal/testUtil"
 	"example.com/leaderboard/pkg/cache"
 	"example.com/leaderboard/pkg/model"
+	"example.com/leaderboard/pkg/repository"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -20,9 +21,9 @@ var _ = Describe("Cache", func() {
 	})
 	Describe("test SetLeaderboard", func() {
 		Context("successful", func() {
-			var leaderboard model.Leaderboard
+			var scoreObjs []repository.ScoreORM
 			BeforeEach(func() {
-				leaderboard = testUtil.CreateLeaderboard()
+				scoreObjs = testUtil.CreateScores(10)
 			})
 			AfterEach(func() {
 				ctx := context.Background()
@@ -32,26 +33,26 @@ var _ = Describe("Cache", func() {
 			It("Just set leaderboard", func() {
 				var actualLeaderboard model.Leaderboard
 				ctx := context.Background()
-				err := rdb.SetLeaderboard(ctx, leaderboard)
+				expectedLeaderboard, err := rdb.SetLeaderboard(ctx, scoreObjs)
 				Expect(err).To(BeNil())
 				actualValue, _ := rdb.Get(ctx, cache.LeaderboardKey).Result()
 				json.Unmarshal([]byte(actualValue), &actualLeaderboard)
-				Expect(actualLeaderboard).To(Equal(leaderboard))
+				Expect(actualLeaderboard).To(Equal(expectedLeaderboard))
 			})
 			It("set leaderboard twice", func() {
 				var actualLeaderboard model.Leaderboard
 				ctx := context.Background()
-				err := rdb.SetLeaderboard(ctx, leaderboard)
+				expectedLeaderboard, err := rdb.SetLeaderboard(ctx, scoreObjs)
 				Expect(err).To(BeNil())
 
-				leaderboard2 := testUtil.CreateLeaderboard()
-				err = rdb.SetLeaderboard(ctx, leaderboard2)
+				scoreObjs2 := testUtil.CreateScores(10)
+				leaderboard2, err := rdb.SetLeaderboard(ctx, scoreObjs2)
 				Expect(err).To(BeNil())
 
 				actualValue, _ := rdb.Get(ctx, cache.LeaderboardKey).Result()
 				json.Unmarshal([]byte(actualValue), &actualLeaderboard)
 
-				Expect(actualLeaderboard).NotTo(Equal(leaderboard))
+				Expect(actualLeaderboard).NotTo(Equal(expectedLeaderboard))
 				Expect(actualLeaderboard).To(Equal(leaderboard2))
 			})
 		})
@@ -62,8 +63,8 @@ var _ = Describe("Cache", func() {
 			var expectedLeaderboard model.Leaderboard
 			BeforeEach(func() {
 				ctx := context.Background()
-				expectedLeaderboard = testUtil.CreateLeaderboard()
-				rdb.SetLeaderboard(ctx, expectedLeaderboard)
+				scoreObjs := testUtil.CreateScores(10)
+				expectedLeaderboard, _ = rdb.SetLeaderboard(ctx, scoreObjs)
 			})
 			AfterEach(func() {
 				ctx := context.Background()

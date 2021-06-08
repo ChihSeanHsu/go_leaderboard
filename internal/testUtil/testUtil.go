@@ -8,13 +8,24 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateLeaderboard() model.Leaderboard {
-	var scores []model.Score
-	for i := 10; i > 0; i-- {
+func CreateScores(count int) []repository.ScoreORM {
+	var scores []repository.ScoreORM
+	for i := count; i > 0; i-- {
 		clientID := uuid.NewString()
-		scores = append(scores, model.Score{
+		scores = append(scores, repository.ScoreORM{
 			ClientID: clientID,
 			Score:    float64(i),
+		})
+	}
+	return scores
+}
+
+func CreateLeaderboard(scoreObjs []repository.ScoreORM) model.Leaderboard {
+	var scores []model.Score
+	for _, score := range scoreObjs {
+		scores = append(scores, model.Score{
+			ClientID: score.ClientID,
+			Score:    score.Score,
 		})
 	}
 	return model.Leaderboard{

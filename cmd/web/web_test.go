@@ -55,9 +55,9 @@ var _ = Describe("Web", func() {
 		Context("successful", func() {
 			var expectedLeaderboard model.Leaderboard
 			BeforeEach(func() {
-				expectedLeaderboard = testUtil.CreateLeaderboard()
+				scores := testUtil.CreateScores(10)
 				ctx := context.Background()
-				rdb.SetLeaderboard(ctx, expectedLeaderboard)
+				expectedLeaderboard, _ = rdb.SetLeaderboard(ctx, scores)
 			})
 			AfterEach(func() {
 				ctx := context.Background()
@@ -70,22 +70,35 @@ var _ = Describe("Web", func() {
 				Expect(r.Body.Bytes()).To(Equal(expected))
 			})
 		})
+		Context("not found", func() {
+			AfterEach(func() {
+				ctx := context.Background()
+				rdb.Del(ctx, cache.LeaderboardKey)
+				testUtil.TruncateTable(db)
+			})
+			It("no record", func() {
+				r := request(router, method, uri, nil)
+				expected, _ := json.Marshal(model.Leaderboard{})
+				Expect(r.Code).To(Equal(http.StatusOK))
+				Expect(r.Body.Bytes()).To(Equal(expected))
+			})
+			It("no cache", func() {
+				scores := testUtil.CreateScores(10)
+				expectedLeaderboard := testUtil.CreateLeaderboard(scores)
+				expectedJSON, _ := json.Marshal(expectedLeaderboard)
+				ctx := context.Background()
+				for _, score := range expectedLeaderboard.TopPlayers {
+					db.CreateScore(ctx, score.ClientID, score.Score)
+				}
+				r := request(router, method, uri, nil)
+				Expect(r.Code).To(Equal(http.StatusOK))
+				Expect(r.Body.Bytes()).To(Equal(expectedJSON))
+			})
+		})
 		Context("failed", func() {
 			AfterEach(func() {
 				ctx := context.Background()
 				rdb.Del(ctx, cache.LeaderboardKey)
-			})
-			It("not found1", func() {
-				r := request(router, method, uri, nil)
-				Expect(r.Code).To(Equal(http.StatusNotFound))
-				Expect(r.Body.String()).To(Equal("{\"status\":\"leaderboard not ready\"}"))
-			})
-			It("not found1", func() {
-				ctx := context.Background()
-				rdb.Set(ctx, cache.LeaderboardKey, "", 0)
-				r := request(router, method, uri, nil)
-				Expect(r.Code).To(Equal(http.StatusNotFound))
-				Expect(r.Body.String()).To(Equal("{\"status\":\"leaderboard not ready\"}"))
 			})
 			It("internal error", func() {
 				ctx := context.Background()
@@ -153,16 +166,6 @@ var _ = Describe("Web", func() {
 				Expect(r.Code).To(Equal(http.StatusForbidden))
 				Expect(r.Body.String()).To(Equal("{\"status\":\"Invalid Request Body\"}"))
 			})
-			//It("internal error", func() {
-			//	r := httptest.NewRecorder()
-			//	ctx := context.Background()
-			//	rdb.Set(ctx, cache.LeaderboardKey, "test", 0)
-			//	req, _ := http.NewRequest(method, uri, nil)
-			//	router.ServeHTTP(r, req)
-			//
-			//	Expect(r.Code).To(Equal(http.StatusInternalServerError))
-			//	Expect(r.Body.String()).To(Equal("{\"status\":\"Server error\"}"))
-			//})
 		})
 	})
 })

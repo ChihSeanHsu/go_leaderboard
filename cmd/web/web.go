@@ -25,18 +25,16 @@ func GetLeaderboard(c *gin.Context) {
 	var result interface{}
 	ctx := context.Background()
 	leaderboard, err := Cache.GetLeaderboard(ctx)
-	switch {
-	case err == cache.ErrNotFound:
-		status = http.StatusNotFound
-		result = gin.H{
-			"status": "leaderboard not ready",
-		}
-	case err != nil:
+	if err == cache.ErrNotFound {
+		topTen, _ := DB.ListTopScores(ctx)
+		leaderboard, err = Cache.SetLeaderboard(ctx, topTen)
+	}
+	if err != nil {
 		status = http.StatusInternalServerError
 		result = gin.H{
 			"status": "Server error",
 		}
-	default:
+	} else {
 		status = http.StatusOK
 		result = leaderboard
 	}
