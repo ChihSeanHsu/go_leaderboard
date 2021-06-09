@@ -134,7 +134,7 @@ var _ = Describe("Web", func() {
 			It("Just PostScore", func() {
 				body := strings.NewReader("{\"score\": 10}")
 				header := Header{
-					Key:   "clientId",
+					Key:   "ClientId",
 					Value: "test",
 				}
 				r := request(router, method, uri, body, header)
@@ -157,7 +157,7 @@ var _ = Describe("Web", func() {
 			It("invalid body", func() {
 				body := strings.NewReader("{\"score\": \"test\"}")
 				header := Header{
-					Key:   "clientId",
+					Key:   "ClientId",
 					Value: "test",
 				}
 				r := request(router, method, uri, body, header)

@@ -69,7 +69,7 @@ func PostScore(c *gin.Context) {
 	)
 	ctx := traceContext(c)
 
-	clientID := c.Request.Header.Get("clientId")
+	clientID := c.Request.Header.Get("ClientId")
 	if c.Request.Body != nil {
 		body, err = ioutil.ReadAll(c.Request.Body)
 		err = json.Unmarshal(body, &scoreJSON)

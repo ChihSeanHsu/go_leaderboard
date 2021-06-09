@@ -35,6 +35,7 @@ func main() {
 	logging.InitLogging()
 	DB = repository.Init(20, 1)
 	Cache = cache.Init(10)
+	defer Cache.Close()
 
 	c := cron.New()
 	c.AddJob("@every 10m", ResetLeaderboard{DB, Cache})
